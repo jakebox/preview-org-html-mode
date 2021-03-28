@@ -1,4 +1,28 @@
-;; preview-org-html-mode
+;;; preview-org-html-mode.el --- Semi-live Xwidgets preview of org-exported HTML
+
+;; Author: Jake B
+;; Url: https://github.com/jakebox/preview-org-html-mode
+;; Version: 0.1
+;; Keywords: org, html, preview, xwideget
+
+;;; Commentary:
+
+;;; License:
+
+;; This program is free software; you can redistribute it and/or modify
+;; it under the terms of the GNU General Public License as published by
+;; the Free Software Foundation, either version 3 of the License, or
+;; (at your option) any later version.
+
+;; This program is distributed in the hope that it will be useful,
+;; but WITHOUT ANY WARRANTY; without even the implied warranty of
+;; MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+;; GNU General Public License for more details.
+
+;; You should have received a copy of the GNU General Public License
+;; along with this program.  If not, see <https://www.gnu.org/licenses/>.
+
+;;; Code:
 
 ;; Helper funcs
 ;; https://stackoverflow.com/questions/10929915/how-do-i-answer-y-automatically-kill-matching-buffers-asks-if-i-should-kill-a-m
@@ -47,7 +71,6 @@
 
 (defun preview-org-html--unconfig ()
   "Unconfigure preview-org-html (remove hooks and advice)."
-  (interactive)
   (if (eq preview-org-html-auto-refresh-on-save t)
       (setq-local after-save-hook nil) ;; Export/refresh on save.
     (advice-remove 'org-html-export-to-html #'preview-org-html--reload-preview)) ;; Just reload on export, not on save.
@@ -65,7 +88,6 @@
 
 (defun preview-org-html-start-preview ()
   "Begin the preview-org-html preview."
-  (interactive)
   (when buffer-file-name
     (add-hook 'kill-buffer-hook #'preview-org-html-stop-preview nil t)
     (add-hook 'kill-emacs-hook #'preview-org-html-stop-preview nil t)
