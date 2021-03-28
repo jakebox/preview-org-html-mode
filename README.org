@@ -1,0 +1,10 @@
+#+TITLE: preview-org-html-mode
+
+This minor mode provides an easy preview of your org-exported HTML files using the =xwidget= WebKit browser. Only tested on Emacs 27.1 using emacs-plus on OSX. By default when the mode is enabled a save triggers =org-html-export-to-html= and refreshes the xwidget view.
+
+* Usage
+** Commands
++ =preview-org-html-mode= - begins the preview.
++ =preview-org-html-pop-window-to-frame= - pops out the current window in to a frame.
+** Variables/Configurations
++ =preview-org-html-auto-refresh-on-save= - default =t=. If non-nil, automatically export org file to html and refresh preview. If nil, only refresh when `org-html-export-to-html' is called manually."
