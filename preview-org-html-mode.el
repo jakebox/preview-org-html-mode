@@ -24,20 +24,25 @@
 
 ;;; Code:
 
-;; Helper funcs
+(require 'cl-lib)
+(require 'org)
+(require 'xwidget)
+
+
 ;; https://stackoverflow.com/questions/10929915/how-do-i-answer-y-automatically-kill-matching-buffers-asks-if-i-should-kill-a-m
 (defun preview-org-html--kill-matching-buffers-no-ask (regexp)
+  "Kill buffers via REGEXP without confirmation."
   (cl-letf (((symbol-function 'kill-buffer-ask) #'kill-buffer))
     (kill-matching-buffers regexp)))
 
 ;; https://emacs.stackexchange.com/questions/7116/pop-a-window-into-a-frame
 (defun preview-org-html-pop-window-to-frame ()
+  "Pop a window to a frame."
   (interactive)
   (let ((buffer (current-buffer)))
     (unless (one-window-p)
       (delete-window))
     (display-buffer-pop-up-frame buffer nil)))
-;; -------------
 
 
 (defgroup preview-org-html nil
@@ -46,8 +51,14 @@
   :link '(url-link :tag "Homepage" "https://github.com/jakebox/"))
 
 (defcustom preview-org-html-auto-refresh-on-save t
-  "If non-nil, automatically export org file to html and refresh preview. If nil, only refresh when `org-html-export-to-html' is called manually."
+  "If non-nil, automatically export org file to html and refresh preview.
+If nil, only refresh when `org-html-export-to-html' is called manually."
   :type 'boolean
+  :group 'preview-org-html)
+
+(defcustom preview-org-html--xwidget-buffer-name nil
+  "Internal WIP."
+  :type 'string
   :group 'preview-org-html)
 
 
@@ -72,10 +83,10 @@
 (defun preview-org-html--unconfig ()
   "Unconfigure preview-org-html (remove hooks and advice)."
   (if (eq preview-org-html-auto-refresh-on-save t)
-      (setq-local after-save-hook nil) ;; Export/refresh on save.
+      (setq-local after-save-hook nil) ;; Export/refresh on save. Look for a better way to do this in case there are other hooks.
     (advice-remove 'org-html-export-to-html #'preview-org-html--reload-preview)) ;; Just reload on export, not on save.
   (remove-hook 'kill-buffer-hook #'preview-org-html-stop-preview t)
-  (remove-hook 'kill-emacs-hook #'preview-org-html-stop-preview t)) 
+  (remove-hook 'kill-emacs-hook #'preview-org-html-stop-preview t))
 
 (defun preview-org-html--open-xwidget ()
   "Open xwidgets browser on current file."
@@ -83,6 +94,7 @@
   (split-window-right)
   (other-window 1)
   (xwidget-webkit-browse-url html-file-name)
+  (setq preview-org-html--xwidget-buffer-name (buffer-name))
   (other-window 1)
   (preview-org-html--reload-preview))
 
@@ -101,7 +113,7 @@
 (defun preview-org-html-stop-preview ()
   "Stop the preview-org-html preview."
   (message "ended preview-org-html")
-  (setq kill-buffer-query-functions nil)
+  (setq kill-buffer-query-functions nil) ;; TODO
   (preview-org-html--kill-matching-buffers-no-ask "\*xwidget\*")
   (setq kill-buffer-query-functions '(process-kill-buffer-query-function)) ;; reset back to default (this is a terrible way to do this)
   (preview-org-html--unconfig))
