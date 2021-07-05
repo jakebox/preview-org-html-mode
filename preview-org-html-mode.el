@@ -39,7 +39,7 @@ If nil, only refresh when `org-html-export-to-html' is called manually."
   :type 'boolean
   :group 'preview-org-html)
 
-(defvar preview-org-html--xwidget-buffer-name nil)
+(defvar preview-org-html--xwidget-buffer nil)
 (defvar preview-org-html--previewed-buffer-name nil)
 
 
@@ -64,15 +64,15 @@ If nil, only refresh when `org-html-export-to-html' is called manually."
 
 (defun preview-org-html--kill-xwidget-buffer ()
   "Kill the xwidget preview buffer."
-  (when (bound-and-true-p preview-org-html--xwidget-buffer-name) ;; Only do these things if the preview is around
-	(progn 
+  (when (bound-and-true-p preview-org-html--xwidget-buffer) ;; Only do these things if the preview is around
+	(progn
 	  (let ((kill-buffer-query-functions nil))
-		(kill-buffer preview-org-html--xwidget-buffer-name))
+		(kill-buffer preview-org-html--xwidget-buffer))
 	  (delete-window)
 	  (pop-to-buffer preview-org-html--previewed-buffer-name))))
 
 (defun preview-org-html--config ()
-  "Configure the buffer for preview-org-html-mode. Add auto-stop hooks.
+  "Configure the buffer for 'preview-org-html-mode'. Add auto-stop hooks.
 Also configure the refresh system (refresh only on export or automatically export and refresh on save)."
   (setq preview-org-html--previewed-buffer-name (buffer-name))
   (dolist (hook '(kill-buffer-hook kill-emacs-hook))
@@ -82,13 +82,13 @@ Also configure the refresh system (refresh only on export or automatically expor
     (advice-add 'org-html-export-to-html :after #'preview-org-html--reload-preview))) ;; Less automated. On export, refresh the preview.
 
 (defun preview-org-html--unconfig ()
-  "Unconfigure preview-org-html-mode (remove hooks and advice)."
+  "Unconfigure 'preview-org-html-mode' (remove hooks and advice)."
   (if (eq preview-org-html-auto-refresh-on-save t) ;; Condtionally remove some hooks/advice
 	  (remove-hook 'after-save-hook #'preview-org-html-refresh t)
     (advice-remove 'org-html-export-to-html #'preview-org-html--reload-preview)) ;; Just reload on export, not on save.
   (dolist (hook '(kill-buffer-hook kill-emacs-hook)) ;; Remove hooks
     (remove-hook hook #'preview-org-html--stop-preview t))
-  (dolist (var '(preview-org-html--xwidget-buffer-name preview-org-html--previewed-buffer-name)) ;; Reset variables
+  (dolist (var '(preview-org-html--xwidget-buffer preview-org-html--previewed-buffer-name)) ;; Reset variables
 	(set var nil)))
 
 (defun preview-org-html--open-xwidget ()
@@ -97,7 +97,7 @@ Also configure the refresh system (refresh only on export or automatically expor
 	(split-window-right)
 	(other-window 1)
 	(xwidget-webkit-browse-url html-file-name)
-	(setq preview-org-html--xwidget-buffer-name (get-buffer (buffer-name))))
+	(setq preview-org-html--xwidget-buffer (get-buffer (buffer-name))))
   (previous-window-any-frame)
   (preview-org-html--reload-preview))
 
