@@ -34,7 +34,7 @@
   :link '(url-link :tag "Homepage" "https://github.com/jakebox/"))
 
 (defcustom preview-org-html-refresh-configuration 'save
-"If 'save, update on save.
+"If 'save, update on save (default).
 If 'export, update on manual export \(using `org-html-export-to-html').
 If 'timer, update preview on timer.
 If 'instant, update ASAP (may cause slowdowns)."
@@ -47,7 +47,7 @@ If 'instant, update ASAP (may cause slowdowns)."
   :options '(save export timer instant)
   :group 'preview-org-html)
 
-(defcustom preview-org-html--timer-interval 4
+(defcustom preview-org-html-timer-interval 2
   "Seconds to wait between exports when in 'timer mode."
   :type 'integer
   :group 'preview-org-html)
@@ -84,18 +84,19 @@ If 'instant, update ASAP (may cause slowdowns)."
   (xwidget-webkit-reload))
 
 (defun preview-org-html--kill-xwidget-buffer ()
-  "Kill the xwidget preview buffer."
+  "Kill the xwidget preview buffer and pop back to the previewed org buffer."
   (when (bound-and-true-p preview-org-html--xwidget-buffer) ;; Only do these things if the preview is around
 	(progn
+	  (if (get-buffer-window preview-org-html--xwidget-buffer 'visible) ;; If preview is visible
+		  (delete-window (get-buffer-window preview-org-html--xwidget-buffer)))
 	  (let ((kill-buffer-query-functions nil))
 		(kill-buffer preview-org-html--xwidget-buffer))
-	  (delete-window)
 	  (pop-to-buffer preview-org-html--previewed-buffer-name))))
 
 (defun preview-org-html--run-with-timer ()
   "Configure timer to refresh preview for 'timer mode."
   (setq preview-org-html--refresh-timer
-		(run-at-time 1 preview-org-html--timer-interval 'preview-org-html-refresh)))
+		(run-at-time 1 preview-org-html-timer-interval 'preview-org-html-refresh)))
 
 (defun preview-org-html--config ()
   "Configure the buffer for 'preview-org-html-mode'. Add auto-stop hooks.
