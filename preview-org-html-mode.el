@@ -39,6 +39,7 @@ If 'export, update on manual export \(using `org-html-export-to-html').
 If 'timer, update preview on timer.
 If 'instant, update ASAP (may cause slowdowns)."
   :type '(choice
+		  (symbol :tag "Update preview manually by running `preview-org-html-refresh'."    'manual)
 		  (symbol :tag "Update preview on manual save."    'save)
 		  (symbol :tag "Update preview one manual export." 'export)
 		  (symbol :tag "Update preview on a timer."        'timer)
@@ -67,13 +68,16 @@ If 'instant, update ASAP (may cause slowdowns)."
 
 (defun preview-org-html-refresh ()
   "Exports the org file to HTML and refreshes the Xwidgets preview."
-  ;; TODO, might make this user-accessible so it can be bound to a key. Not sure if that would be useful or not.
-  ;; Unless the previewed file isn't focused AND the timer/instant mode is on, refresh
-  (unless (or (eq (eq (get-buffer preview-org-html--previewed-buffer-name) (window-buffer (selected-window))) nil)
-			  (or (let ((state preview-org-html-refresh-configuration)) (eq state 'timer) (eq state 'instant))))
-	(progn
-	  (org-html-export-to-html)
-	  (preview-org-html--reload-preview))))
+  ;; Refresh the preview.
+  (interactive)
+  (cond ((eq preview-org-html-refresh-configuration 'manual) ;; WIP If in manual mode it doesn't matter what buffer is active
+		 (progn (pop-to-buffer preview-org-html--previewed-buffer-name nil t) (org-html-export-to-html)
+				(preview-org-html--reload-preview)))
+		((unless (or (eq (eq (get-buffer preview-org-html--previewed-buffer-name) (window-buffer (selected-window))) nil) ;; In timer and instant modes the visible buffer matters
+					 (or (let ((state preview-org-html-refresh-configuration)) (eq state 'timer) (eq state 'instant))))
+		   (progn
+			 (org-html-export-to-html)
+			 (preview-org-html--reload-preview))))))
 
 (defun preview-org-html--reload-preview ()
   "Reload xwidget preview."
