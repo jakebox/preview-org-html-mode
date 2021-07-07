@@ -5,19 +5,19 @@ This minor mode provides an easy preview of your org-exported HTML files using t
 * Usage
 ** Commands
 + ~preview-org-html-mode~ - begins the preview.
-+ ~preview-org-html-refresh~ - refresh preview (only needed in ~'manual~ mode).
++ ~preview-org-html-refresh~ - refresh preview (only needed in ~manual~ mode).
 + ~preview-org-html-pop-window-to-frame~ - pops out the current window in to a frame.
 ** Variables/Configurations
 + ~preview-org-html-refresh-configuration~ - configure how your preview is updated.
-  * If ~'save~, update on save (default).
-  * If ~'export~, update on manual export (using ~org-html-export-to-html~).
-  * If ~'timer~, update preview on timer.
+  * If ~save~, update on save (default).
+  * If ~export~, update on manual export (using ~org-html-export-to-html~).
+  * If ~timer~, update preview on timer.
     - Configure with ~preview-org-html-timer-interval~, default 2 seconds
-  * If ~'instant~, update ASAP (may cause slowdowns).
+  * If ~instant~, update ASAP (may cause slowdowns).
     
 * Demo
-[[preview-org-html-mode-demo]]
+[[preview-org-html-mode-demo.gif]]
 
 * Todos
-+ Improve ~'instant~ mode
++ Improve ~instant~ mode
 + Battle testing
