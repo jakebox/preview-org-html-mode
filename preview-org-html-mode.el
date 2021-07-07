@@ -34,20 +34,20 @@
   :link '(url-link :tag "Homepage" "https://github.com/jakebox/"))
 
 (defcustom preview-org-html-refresh-configuration 'save
-  "If 'timer, update preview on timer.
-If 'save, update on save.
-If 'instant, update ASAP (may cause slowdowns).
-If 'export, update on manual export \(using `org-html-export-to-html')."
+"If 'save, update on save.
+If 'export, update on manual export \(using `org-html-export-to-html').
+If 'timer, update preview on timer.
+If 'instant, update ASAP (may cause slowdowns)."
   :type '(choice
-		  (symbol :tag "Update preview on a timer." 'timer)
-		  (symbol :tag "Update preview on manual save." 'save)
-		  (symbol :tag "Update preview instantly." 'instant)
-		  (symbol :tag "Update preview one manual export." 'export))
-  :options '(timer save instant export)
+		  (symbol :tag "Update preview on manual save."    'save)
+		  (symbol :tag "Update preview one manual export." 'export)
+		  (symbol :tag "Update preview on a timer."        'timer)
+		  (symbol :tag "Update preview instantly."         'instant))
+  :options '(save export timer instant)
   :group 'preview-org-html)
 
 (defcustom preview-org-html--timer-interval 4
-  "Seconds to wait between exports when preview-org-html-refresh-configuration is set to 'timer."
+  "Seconds to wait between exports when in 'timer mode."
   :type 'integer
   :group 'preview-org-html)
 
@@ -55,15 +55,6 @@ If 'export, update on manual export \(using `org-html-export-to-html')."
 (defvar preview-org-html--previewed-buffer-name nil)
 (defvar preview-org-html--refresh-timer nil)
 
-(defun preview-org-html-check-test ()
-  (interactive)
-  (cond ((eq (get-buffer preview-org-html--previewed-buffer-name) (window-buffer (selected-window)))
-		 (message "Visible and focused"))
-		((get-buffer-window preview-org-html--previewed-buffer-name)
-		 (message "Visible and unfocused")) 
-		(t
-		 (message "Not visible")))
-  )
 
 ;; https://emacs.stackexchange.com/questions/7116/pop-a-window-into-a-frame
 (defun preview-org-html-pop-window-to-frame ()
@@ -76,11 +67,11 @@ If 'export, update on manual export \(using `org-html-export-to-html')."
 
 (defun preview-org-html-refresh ()
   "Exports the org file to HTML and refreshes the Xwidgets preview."
-  ;; WIP, might make this user-accessible so it can be bound to a key. Not sure if that would be useful or not.
+  ;; TODO, might make this user-accessible so it can be bound to a key. Not sure if that would be useful or not.
   ;; Unless the previewed file isn't focused AND the timer/instant mode is on, refresh
   (unless (or (eq (eq (get-buffer preview-org-html--previewed-buffer-name) (window-buffer (selected-window))) nil)
 			  (or (let ((state preview-org-html-refresh-configuration)) (eq state 'timer) (eq state 'instant))))
-	(progn 
+	(progn
 	  (org-html-export-to-html)
 	  (preview-org-html--reload-preview))))
 
@@ -98,8 +89,9 @@ If 'export, update on manual export \(using `org-html-export-to-html')."
 	  (pop-to-buffer preview-org-html--previewed-buffer-name))))
 
 (defun preview-org-html--run-with-timer ()
-  (setq preview-org-html--refresh-timer (run-at-time 1 preview-org-html--timer-interval 'preview-org-html-refresh)))
-
+  "Configure timer to refresh preview for 'timer mode."
+  (setq preview-org-html--refresh-timer
+		(run-at-time 1 preview-org-html--timer-interval 'preview-org-html-refresh)))
 
 (defun preview-org-html--config ()
   "Configure the buffer for 'preview-org-html-mode'. Add auto-stop hooks.
@@ -107,25 +99,20 @@ Also configure the refresh system (refresh only on export or automatically expor
   (setq preview-org-html--previewed-buffer-name (buffer-name))
   (dolist (hook '(kill-buffer-hook kill-emacs-hook)) ;; Configure exit hooks
     (add-hook hook #'preview-org-html--stop-preview nil t))
-  (cond ((eq preview-org-html-refresh-configuration 'instant) ;; TODO instantly
-		 (add-hook 'post-self-insert-hook #'preview-org-html-refresh nil t)) ;; On self insert refresh
-		((eq preview-org-html-refresh-configuration 'save)
-		 (add-hook 'after-save-hook #'preview-org-html-refresh nil t)) ;; More automated. On save file, export the org file and refresh the preview.
-		((eq preview-org-html-refresh-configuration 'timer) ;; every X seconds
-		 (preview-org-html--run-with-timer))
-		((eq preview-org-html-refresh-configuration 'export)
-		 (advice-add 'org-html-export-to-html :after #'preview-org-html--reload-preview)))) ;; On export, refresh the preview.
+  (let ((conf preview-org-html-refresh-configuration))
+	(cond
+	 ((eq conf 'instant) (add-hook 'post-self-insert-hook #'preview-org-html-refresh nil t)) ;; TODO Instantly (on self insert refresh)
+	 ((eq conf 'save)    (add-hook 'after-save-hook #'preview-org-html-refresh nil t)) ;; On save
+	 ((eq conf 'timer)   (preview-org-html--run-with-timer)) ;; every X seconds
+	 ((eq conf 'export)  (advice-add 'org-html-export-to-html :after #'preview-org-html--reload-preview))))) ;; On export
 
 (defun preview-org-html--unconfig ()
   "Unconfigure 'preview-org-html-mode' (remove hooks and advice)."
-  (cond ((eq preview-org-html-refresh-configuration 'instant) ;; TODO
-		 (remove-hook 'post-self-insert-hook #'preview-org-html-refresh t))
-		((eq preview-org-html-refresh-configuration 'save)
-		 (remove-hook 'after-save-hook #'preview-org-html-refresh t))
-		((eq preview-org-html-refresh-configuration 'timer)
-		 (cancel-timer preview-org-html--refresh-timer))
-		((eq preview-org-html-refresh-configuration 'export)
-		 (advice-remove 'org-html-export-to-html #'preview-org-html--reload-preview)) )
+  (let ((conf preview-org-html-refresh-configuration))
+	(cond ((eq conf 'instant) (remove-hook 'post-self-insert-hook #'preview-org-html-refresh t)) ;; TODO
+		  ((eq conf 'save)    (remove-hook 'after-save-hook #'preview-org-html-refresh t))
+		  ((eq conf 'timer)   (cancel-timer preview-org-html--refresh-timer))
+		  ((eq conf 'export)  (advice-remove 'org-html-export-to-html #'preview-org-html--reload-preview))))
   (dolist (hook '(kill-buffer-hook kill-emacs-hook)) ;; Remove hooks
     (remove-hook hook #'preview-org-html--stop-preview t))
   (dolist (var '(preview-org-html--xwidget-buffer preview-org-html--previewed-buffer-name)) ;; Reset variables
