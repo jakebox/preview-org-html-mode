@@ -1,11 +1,15 @@
-;;; preview-org-html-mode.el --- Semi-live Xwidgets preview of org-exported HTML
+;;; preview-org-html-mode.el --- Semi-live Xwidgets preview of org-exported HTML -*- lexical-binding: t; -*-
 
 ;; Author: Jake B
 ;; Url: https://github.com/jakebox/preview-org-html-mode
 ;; Version: 0.1
-;; Keywords: org, html, preview, xwideget
+;; Package-Requires: ((emacs "27.1"))
+;; Keywords: convenience, Org, outlines
 
 ;;; Commentary:
+
+;; This minor mode provides live side-by-side preview of your
+;; org-exported HTML files using the xwidget WebKit browser.
 
 ;;; License:
 
