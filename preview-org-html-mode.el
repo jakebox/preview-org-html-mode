@@ -1,4 +1,4 @@
-;;; preview-org-html-mode.el --- Semi-live Xwidgets preview of org-exported HTML -*- lexical-binding: t; -*-
+;;; preview-org-html-mode.el --- Semi-live preview of org-exported HTML with internal Emacs browser. -*- lexical-binding: t; -*-
 
 ;; Author: Jake B
 ;; Url: https://github.com/jakebox/preview-org-html-mode
@@ -9,9 +9,9 @@
 ;;; Commentary:
 
 ;; This minor mode provides live side-by-side preview of your
-;; org-exported HTML files using the xwidget WebKit browser.
+;; org-exported HTML files using the either the eww or xwidget License.
 
-;;; License:
+;;; browser:
 
 ;; This program is free software; you can redistribute it and/or modify
 ;; it under the terms of the GNU General Public License as published by
@@ -30,10 +30,11 @@
 
 (require 'org)
 (require 'xwidget)
+(require 'eww)
 
 
 (defgroup preview-org-html nil
-  "Easy Orgmode HTML preview with Xwidgets browser."
+  "Easy Orgmode HTML preview with internal Emacs browsers."
   :group 'org-mode
   :link '(url-link :tag "Homepage" "https://github.com/jakebox/preview-org-html-mode/"))
 
@@ -56,7 +57,12 @@ If 'instant, update ASAP (may cause slowdowns)."
   :type 'integer
   :group 'preview-org-html)
 
-(defvar preview-org-html--xwidget-buffer nil)
+(defcustom preview-org-html-viewer 'eww
+  "Which preview method to use - xwidget browser or eww."
+  :type 'symbol
+  :group 'preview-org-hmtl)
+
+(defvar preview-org-html--browser-buffer nil)
 (defvar preview-org-html--previewed-buffer-name nil)
 (defvar preview-org-html--refresh-timer nil)
 
@@ -71,36 +77,44 @@ If 'instant, update ASAP (may cause slowdowns)."
     (display-buffer-pop-up-frame buffer nil)))
 
 (defun preview-org-html-refresh ()
-  "Exports the org file to HTML and refreshes the Xwidgets preview."
+  "Exports the org file to HTML and refreshes the preview."
   ;; Refresh the preview.
   (interactive)
   ;; WIP If in manual mode it doesn't matter what buffer is active
-  (cond ((eq preview-org-html-refresh-configuration 'manual) 
+  (cond ((eq preview-org-html-refresh-configuration 'manual)
 		 (pop-to-buffer preview-org-html--previewed-buffer-name nil t)
-		 (org-html-export-to-html)
+		 (preview-org-html--org-export-html)
 		 (preview-org-html--reload-preview))
-		((unless (or (eq (eq (get-buffer preview-org-html--previewed-buffer-name)
-                             ;; In timer and instant modes the visible buffer matters 
+		((unless (or (eq (eq (get-buffer preview-org-html--previewed-buffer-name) ;; TODO JAKE WHAT IS THIS
+                             ;; In timer and instant modes the visible buffer matters
 							 (window-buffer (selected-window))) nil)
 					 (or (let ((state preview-org-html-refresh-configuration))
 						   (eq state 'timer) (eq state 'instant))))
-		   (org-html-export-to-html)
+		   (preview-org-html--org-export-html)
 		   (preview-org-html--reload-preview)))))
 
-(defun preview-org-html--reload-preview ()
-  "Reload xwidget preview."
-  (xwidget-webkit-reload))
+(defun preview-org-html--org-export-html ()
+  "Silently export org to HTML."
+  (let ((standard-output 'ignore))
+	(org-html-export-to-html)))
 
-(defun preview-org-html--kill-xwidget-buffer ()
+(defun preview-org-html--reload-preview ()
+  "Reload preview."
+  (save-window-excursion
+	(pop-to-buffer preview-org-html--browser-buffer)
+	(cond ((eq preview-org-html-viewer 'xwidget) (xwidget-webkit-reload))
+		  ((eq preview-org-html-viewer 'eww) (eww-reload)))))
+
+(defun preview-org-html--kill-preview-buffer ()
   "Kill the xwidget preview buffer and pop back to the previewed org buffer."
   ;; Only do these things if the preview is around
-  (when (bound-and-true-p preview-org-html--xwidget-buffer) 
+  (when (bound-and-true-p preview-org-html--browser-buffer)
     ;; If preview is visible we first delete the window, otherwise
 	;; just kill the preview buffer
-	(if (get-buffer-window preview-org-html--xwidget-buffer 'visible) 
-		(delete-window (get-buffer-window preview-org-html--xwidget-buffer)))
+	(if (get-buffer-window preview-org-html--browser-buffer 'visible)
+		(delete-window (get-buffer-window preview-org-html--browser-buffer)))
 	(let ((kill-buffer-query-functions nil))
-	  (kill-buffer preview-org-html--xwidget-buffer))
+	  (kill-buffer preview-org-html--browser-buffer))
 	(pop-to-buffer preview-org-html--previewed-buffer-name)))
 
 (defun preview-org-html--run-with-timer ()
@@ -109,22 +123,21 @@ If 'instant, update ASAP (may cause slowdowns)."
 		(run-at-time 1 preview-org-html-timer-interval #'preview-org-html-refresh)))
 
 (defun preview-org-html--config ()
-  "Configure the buffer for 'preview-org-html-mode'. Add auto-stop
-hooks. Also configure the refresh system (refresh only on export or
-automatically export and refresh on save)."
+  "Configure the buffer for 'preview-org-html-mode'.
+Add auto-stop hooks. Also configure the refresh system."
   (setq preview-org-html--previewed-buffer-name (buffer-name))
   (dolist (hook '(kill-buffer-hook kill-emacs-hook)) ;; Configure exit hooks
     (add-hook hook #'preview-org-html--stop-preview nil t))
   (let ((conf preview-org-html-refresh-configuration))
 	(cond
 	 ((eq conf 'instant) ;; WIP Instantly (on self insert refresh)
-	  (add-hook 'post-self-insert-hook #'preview-org-html-refresh nil t)) 
+	  (add-hook 'post-self-insert-hook #'preview-org-html-refresh nil t))
 	 ((eq conf 'save) ;; On save
-	  (add-hook 'after-save-hook #'preview-org-html-refresh nil t)) 
+	  (add-hook 'after-save-hook #'preview-org-html-refresh nil t))
 	 ((eq conf 'timer) ;; every X seconds
-	  (preview-org-html--run-with-timer)) 
+	  (preview-org-html--run-with-timer))
 	 ((eq conf 'export) ;; On export using org-html-export-html command manually
-	  (advice-add 'org-html-export-to-html :after #'preview-org-html--reload-preview))))) 
+	  (advice-add 'org-html-export-to-html :after #'preview-org-html--reload-preview)))))
 
 (defun preview-org-html--unconfig ()
   "Unconfigure 'preview-org-html-mode' (remove hooks and advice)."
@@ -140,25 +153,25 @@ automatically export and refresh on save)."
   (dolist (hook '(kill-buffer-hook kill-emacs-hook)) ;; Remove hooks
     (remove-hook hook #'preview-org-html--stop-preview t))
   ;; Reset variables
-  (dolist (var '(preview-org-html--xwidget-buffer preview-org-html--previewed-buffer-name)) 
+  (dolist (var '(preview-org-html--browser-buffer preview-org-html--previewed-buffer-name))
 	(set var nil)))
 
-(defun preview-org-html--open-xwidget ()
-  "Open xwidget browser on current file."
+(defun preview-org-html--open-browser ()
+  "Open a browser to preview the exported HTML file."
   (let ((html-file-name (concat (file-name-sans-extension
 								 (concat "file://" buffer-file-name)) ".html")))
 	(split-window-right)
 	(other-window 1)
-	(xwidget-webkit-browse-url html-file-name)
-	(setq preview-org-html--xwidget-buffer (get-buffer (buffer-name))))
-  (previous-window-any-frame)
-  (preview-org-html--reload-preview))
+	(cond ((eq preview-org-html-viewer 'xwidget) (xwidget-webkit-browse-url html-file-name))
+		   ((eq preview-org-html-viewer 'eww) (eww-browse-url html-file-name)))
+	(setq preview-org-html--browser-buffer (get-buffer (buffer-name))))
+  (previous-window-any-frame))
 
 (defun preview-org-html--start-preview ()
   "Begin the preview-org-html preview."
   (when buffer-file-name
 	(cond ((derived-mode-p 'org-mode)
-			 (preview-org-html--open-xwidget)
+			 (preview-org-html--open-browser)
 			 (preview-org-html--config))
 		  (t
 		   (preview-org-html-mode -1)
@@ -167,7 +180,7 @@ automatically export and refresh on save)."
 
 (defun preview-org-html--stop-preview ()
   "Stop the preview-org-html preview."
-  (preview-org-html--kill-xwidget-buffer)
+  (preview-org-html--kill-preview-buffer)
   (preview-org-html--unconfig))
 
 
