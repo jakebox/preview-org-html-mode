@@ -1,30 +1,39 @@
-;;; preview-org-html-mode.el --- Semi-live preview of org-exported HTML with internal Emacs browser. -*- lexical-binding: t; -*-
+;;; preview-org-html-mode.el --- Automatically preview org-exported HTML files within Emacs -*- lexical-binding: t; -*-
 
-;; Author: Jake B
+;; Copyright (C) 2021 Jake B <jakebox.github.io>
+
+;; Author: Jake B <jakebox.github.io>
 ;; Url: https://github.com/jakebox/preview-org-html-mode
-;; Version: 0.1
-;; Package-Requires: ((emacs "27.1"))
 ;; Keywords: convenience, Org, outlines
+;; Version: 0.3
+;; Package-Requires: ((emacs "27.1") (org "8.0"))
 
-;;; Commentary:
-
-;; This minor mode provides live side-by-side preview of your
-;; org-exported HTML files using the either the eww or xwidget License.
-
-;;; browser:
+;; This file is NOT part of GNU Emacs.
 
 ;; This program is free software; you can redistribute it and/or modify
 ;; it under the terms of the GNU General Public License as published by
 ;; the Free Software Foundation, either version 3 of the License, or
 ;; (at your option) any later version.
-
+;;
 ;; This program is distributed in the hope that it will be useful,
 ;; but WITHOUT ANY WARRANTY; without even the implied warranty of
 ;; MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
 ;; GNU General Public License for more details.
-
+;;
 ;; You should have received a copy of the GNU General Public License
 ;; along with this program.  If not, see <https://www.gnu.org/licenses/>.
+
+;;; Commentary:
+;;
+;; This minor mode provides a side-by-side preview of your org-exported HTML
+;; files using the either the eww or xwidget browsers. The update frequency of
+;; the preview can be configured to suit your preference.
+;;
+
+;; Quick start:
+;; Put this file under your load path.
+;; Enable the minor mode in an Org buffer:
+;;   M-x preview-org-html-mode
 
 ;;; Code:
 
@@ -34,21 +43,24 @@
 
 
 (defgroup preview-org-html nil
-  "Easy Orgmode HTML preview with internal Emacs browsers."
+  "Configurable preview of org-exported HTML within Emacs."
   :group 'org-mode
   :link '(url-link :tag "Homepage" "https://github.com/jakebox/preview-org-html-mode/"))
 
 (defcustom preview-org-html-refresh-configuration 'save
-"If 'save, update on save (default).
+  "Specifies how often the HTML preview will be refreshed.
+  
+If 'manual, update manually by running `preview-org-html-refresh'.
+If 'save, update on save (default).
 If 'export, update on manual export \(using `org-html-export-to-html').
-If 'timer, update preview on timer.
+If 'timer, update preview on timer ('preview-org-html-timer-interval').
 If 'instant, update ASAP (may cause slowdowns)."
   :type '(choice
-		  (symbol :tag "Update preview manually by running `preview-org-html-refresh'." 'manual)
-		  (symbol :tag "Update preview on manual save."    'save)
-		  (symbol :tag "Update preview one manual export." 'export)
-		  (symbol :tag "Update preview on a timer."        'timer)
-		  (symbol :tag "Update preview instantly."         'instant))
+		  (symbol :tag "Update preview manually."   'manual)
+		  (symbol :tag "Update preview on save."    'save)
+		  (symbol :tag "Update preview on export."  'export)
+		  (symbol :tag "Update preview on a timer." 'timer)
+		  (symbol :tag "Update preview instantly."  'instant))
   :options '(save export timer instant)
   :group 'preview-org-html)
 
@@ -58,9 +70,11 @@ If 'instant, update ASAP (may cause slowdowns)."
   :group 'preview-org-html)
 
 (defcustom preview-org-html-viewer 'eww
-  "Which preview method to use - xwidget browser or eww."
+  "Which Emacs browser 'preview-org-html-mode' will use.
+If 'eww, use eww browser (default).
+If 'xwidget, use xwidget browser."
   :type 'symbol
-  :group 'preview-org-hmtl)
+  :group 'preview-org-html)
 
 (defvar preview-org-html--browser-buffer nil)
 (defvar preview-org-html--previewed-buffer-name nil)
@@ -100,10 +114,17 @@ If 'instant, update ASAP (may cause slowdowns)."
 
 (defun preview-org-html--reload-preview ()
   "Reload preview."
-  (save-window-excursion
+  (save-selected-window
 	(pop-to-buffer preview-org-html--browser-buffer)
 	(cond ((eq preview-org-html-viewer 'xwidget) (xwidget-webkit-reload))
-		  ((eq preview-org-html-viewer 'eww) (eww-reload)))))
+		  ((eq preview-org-html-viewer 'eww)
+		   (with-selected-window (selected-window)
+			 ;; This stuff is to keep eww window scrolled at same point
+			 (let ((eww-point (point))
+				   (eww-window-start (window-start)))
+			   (eww-reload)
+			   (goto-char eww-point)
+			   (set-window-start nil eww-window-start)))))))
 
 (defun preview-org-html--kill-preview-buffer ()
   "Kill the xwidget preview buffer and pop back to the previewed org buffer."
@@ -169,10 +190,12 @@ Add auto-stop hooks. Also configure the refresh system."
 
 (defun preview-org-html--start-preview ()
   "Begin the preview-org-html preview."
+  (message "preview-org-html-mode has recieved a major update - xwidgets support,
+refresh configurations and more! \n M-x customize-group preview-org-html-mode")
   (when buffer-file-name
 	(cond ((derived-mode-p 'org-mode)
-			 (preview-org-html--open-browser)
-			 (preview-org-html--config))
+		   (preview-org-html--open-browser)
+		   (preview-org-html--config))
 		  (t
 		   (preview-org-html-mode -1)
 		   (user-error "`%s' not supported by preview-org-html

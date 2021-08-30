@@ -1,23 +1,30 @@
 #+TITLE: preview-org-html-mode
+#+AUTHOR: jakebox
 
-This minor mode provides an easy preview of your org-exported HTML files using the =xwidget= WebKit browser. Only tested on Emacs 27.1 and 28.0.50 using emacs-plus on OSX. By default when the mode is enabled a save triggers =org-html-export-to-html= and refreshes the xwidget view.
+This minor mode provides an easy preview of your org-exported HTML files using either the =eww= or =xwidget WebKit= browser. By default, when =preview-org-html-mode= is enabled a save will trigger a refresh of the preview. Refresh frequency can be configured using ~preview-org-html-refresh-configuration~ (see [[#usage][Usage]]).
 
 * Usage
 ** Commands
-+ ~preview-org-html-mode~ - begins the preview.
-+ ~preview-org-html-refresh~ - refresh preview (only needed in ~manual~ mode).
++ ~preview-org-html-mode~ - enables minor mode and opens preview.
++ ~preview-org-html-refresh~ - manually refresh preview (only needed in ~manual~ mode).
 + ~preview-org-html-pop-window-to-frame~ - pops out the current window in to a frame.
 ** Variables/Configurations
-+ ~preview-org-html-refresh-configuration~ - configure how your preview is updated.
-  * If ~save~, update on save (default).
-  * If ~export~, update on manual export (using ~org-html-export-to-html~).
-  * If ~timer~, update preview on timer.
-    - Configure with ~preview-org-html-timer-interval~, default 2 seconds
+*** Refresh Configuration
++ ~preview-org-html-refresh-configuration~ - configure how often the HTML preview will be refreshed
+  * If ~'manual~, update manually by running ~preview-org-html-refresh~.
+  * If ~'save~, update on save (default).
+  * If ~'export~, update on manual export (using ~org-html-export-to-html~).
+  * If ~'timer~, update preview on timer.
+    - Configure with ~preview-org-html-timer-interval~, default ~2~ seconds.
   * If ~instant~, update ASAP (may cause slowdowns).
-    
+*** Viewer
++ ~preview-org-html-viewer~ - which Emacs browser ~preview-org-html-mode~ will use (default ~eww~)
+  * If ~'eww~, use eww browser (default).
+  * If ~'xwidget~, use xwidget browser.
+    - *Requires Emacs to be built with xwidget support*
 * Demo
+This demo is using the =xwidget= browser. The author suggests utilizing the =xwidget= browser, though =eww= is set as default for the comfort of past users.
 [[preview-org-html-mode-demo.gif]]
 
 * Todos
 + Improve ~instant~ mode
-+ Battle testing
