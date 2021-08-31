@@ -4,24 +4,27 @@
 This minor mode provides an easy preview of your org-exported HTML files using either the =eww= or =xwidget WebKit= browser. By default, when =preview-org-html-mode= is enabled a save will trigger a refresh of the preview. Refresh frequency can be configured using ~preview-org-html-refresh-configuration~ (see [[#usage][Usage]]).
 
 * Usage
+Open an Org file and execute ~M-x preview-org-html-mode~. A preview window opens next to the Org file. If you want to manage this window separate (aka, make it a frame) use the function ~preview-org-html-pop-window-to-frame~.
 ** Commands
 + ~preview-org-html-mode~ - enables minor mode and opens preview.
 + ~preview-org-html-refresh~ - manually refresh preview (only needed in ~manual~ mode).
 + ~preview-org-html-pop-window-to-frame~ - pops out the current window in to a frame.
-** Variables/Configurations
-*** Refresh Configuration
+  
+* Variables/Configurations
+** Refresh Configuration
 + ~preview-org-html-refresh-configuration~ - configure how often the HTML preview will be refreshed
-  * If ~'manual~, update manually by running ~preview-org-html-refresh~.
-  * If ~'save~, update on save (default).
-  * If ~'export~, update on manual export (using ~org-html-export-to-html~).
-  * If ~'timer~, update preview on timer.
+  * If ='manual=, update manually by running ~preview-org-html-refresh~.
+  * If ='save=, update on save (default).
+  * If ='export=, update on manual export (using ~org-html-export-to-html~).
+  * If ='timer=, update preview on timer.
     - Configure with ~preview-org-html-timer-interval~, default ~2~ seconds.
   * If ~instant~, update ASAP (may cause slowdowns).
-*** Viewer
+** Viewer
 + ~preview-org-html-viewer~ - which Emacs browser ~preview-org-html-mode~ will use (default ~eww~)
-  * If ~'eww~, use eww browser (default).
-  * If ~'xwidget~, use xwidget browser.
+  * If ='eww=, use eww browser (default).
+  * If ='xwidget=, use xwidget browser.
     - *Requires Emacs to be built with xwidget support*
+      
 * Demo
 This demo is using the =xwidget= browser. The author suggests utilizing the =xwidget= browser, though =eww= is set as default for the comfort of past users.
 [[preview-org-html-mode-demo.gif]]
