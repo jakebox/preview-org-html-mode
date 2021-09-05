@@ -2,6 +2,8 @@
 #+AUTHOR: jakebox
 #+OPTIONS: num:nil toc:nil
 
+*PREVIEW-ORG-HTML-MODE HAS BECOME [[https://github.com/jakebox/org-preview-html][ORG-PREVIEW-HTML]] AND IS ON MELPA. ALL FURTHER DEVELOPMENT CAN BE FOUND THERE. THANK YOU!*
+
 This minor mode provides an easy preview of your org-exported HTML files using either the =eww= or =xwidget WebKit= browser. By default, when =preview-org-html-mode= is enabled a save will trigger a refresh of the preview. Refresh frequency can be configured using ~preview-org-html-refresh-configuration~ (see [[#usage][Usage]]).
 
 * Usage
