@@ -1,5 +1,6 @@
 #+TITLE: preview-org-html-mode
 #+AUTHOR: jakebox
+#+OPTIONS: num:nil toc:nil
 
 This minor mode provides an easy preview of your org-exported HTML files using either the =eww= or =xwidget WebKit= browser. By default, when =preview-org-html-mode= is enabled a save will trigger a refresh of the preview. Refresh frequency can be configured using ~preview-org-html-refresh-configuration~ (see [[#usage][Usage]]).
 
@@ -10,7 +11,7 @@ Open an Org file and execute ~M-x preview-org-html-mode~. A preview window opens
 + ~preview-org-html-refresh~ - manually refresh preview (only needed in ~manual~ mode).
 + ~preview-org-html-pop-window-to-frame~ - pops out the current window in to a frame.
   
-* Variables/Configurations
+* Variables/Configuration
 ** Refresh Configuration
 + ~preview-org-html-refresh-configuration~ - configure how often the HTML preview will be refreshed
   * If ='manual=, update manually by running ~preview-org-html-refresh~.
@@ -18,7 +19,8 @@ Open an Org file and execute ~M-x preview-org-html-mode~. A preview window opens
   * If ='export=, update on manual export (using ~org-html-export-to-html~).
   * If ='timer=, update preview on timer.
     - Configure with ~preview-org-html-timer-interval~, default ~2~ seconds.
-  * If ~instant~, update ASAP (may cause slowdowns).
+  * If ~instant~, update ASAP
+    - Still WIP, it is suggested to use ~timer~ mode with a short interval.
 ** Viewer
 + ~preview-org-html-viewer~ - which Emacs browser ~preview-org-html-mode~ will use (default ~eww~)
   * If ='eww=, use eww browser (default).
@@ -28,6 +30,9 @@ Open an Org file and execute ~M-x preview-org-html-mode~. A preview window opens
 * Demo
 This demo is using the =xwidget= browser. The author suggests utilizing the =xwidget= browser, though =eww= is set as default for the comfort of past users.
 [[preview-org-html-mode-demo.gif]]
+
+* Limitations
+It should be noted that as of now =preview-org-html-mode= supports previewing only one buffer at a time. Any suggestions on how previewing multiple buffers would work are welcome. It would be fairly trivial to implement preview support without any nice automatic switching/saving features; however, I would rather implement a smooth, pleasant experience rather than a janky one.
 
 * Todos
 + Improve ~instant~ mode
